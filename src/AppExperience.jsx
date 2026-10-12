@@ -258,15 +258,4 @@ async function saveListings(updated) {
       return false;
     }
   }
-  function logout() {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    setAuthenticated(false);
-  }
-
-  if (isAdminPath) {
-    if (!authenticated) return <AdminLogin onLogin={() => setAuthenticated(true)} />;
-    return <AdminDashboard listings={listings} saveListings={saveListings} onLogout={logout} />;
-  }
-
-  return <CustomerHome listings={listings} />;
 }
