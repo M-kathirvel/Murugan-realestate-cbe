@@ -44,7 +44,13 @@ function PropertyCard({ property, onEnquire }) {
     <div className="property-photo-wrap"><ImageFallback />{photos[imageIndex] && <img className="property-photo" src={photos[imageIndex]} alt={property.title} onError={(event) => { event.currentTarget.style.display = 'none' }} />}<span className={`status-badge ${property.status === 'sold' ? 'status-badge--sold' : ''}`}><span />{property.status === 'sold' ? 'Sold out' : 'Available'}</span>
       {photos.length > 1 && <div className="photo-controls"><button type="button" aria-label="Previous photo" onClick={() => setImageIndex((imageIndex + photos.length - 1) % photos.length)}><ArrowLeft size={15} /></button><span>{imageIndex + 1} / {photos.length}</span><button type="button" aria-label="Next photo" onClick={() => setImageIndex((imageIndex + 1) % photos.length)}><ArrowRight size={15} /></button></div>}
     </div>
-    <div className="property-body"><div className="property-heading-row"><span className="eyebrow property-category">{property.category}</span><ArrowUpRight size={17} className="property-arrow" /></div><h3>{property.title}</h3><p className="property-location"><MapPin size={14} />{property.location}</p><div className="property-specs"><span><LandPlot size={15} />{property.extent}</span></div>{property.description && <p className="property-description">{property.description}</p>}{property.highlights?.length > 0 && <div className="highlight-list">{property.highlights.slice(0, 3).map((item) => <span key={item}><Check size={12} />{item}</span>)}</div>}<div className="property-card-bottom"><strong className="property-price">{displayPrice(property.price)}</strong><button className="button button--small button--outline" type="button" onClick={() => onEnquire(property)}>Enquire <ArrowUpRight size={15} /></button></div></div>
+    {Array.isArray(property.highlights) && property.highlights.length > 0 && (
+              <div className="highlight-list">
+                {property.highlights.slice(0, 4).map((h, i) => (
+                  <span key={i} className="highlight-tag">{h}</span>
+                ))}
+              </div>
+            )}
   </article>
 }
 
