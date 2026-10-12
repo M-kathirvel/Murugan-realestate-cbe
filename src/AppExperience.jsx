@@ -197,14 +197,12 @@ export default function AppExperience() {
 
       const cleanItems = items.map((item) => {
         const copy = { ...item };
-        // Delete client-side temp ids so Supabase auto-generates them
         if (!copy.id || (typeof copy.id === 'string' && copy.id.startsWith('temp_'))) {
           delete copy.id;
         }
         return copy;
       });
 
-      // Upsert-க்கு பதிலாக insert அல்லது id இருந்தால் மட்டும் upsert
       const hasId = cleanItems.some(i => Boolean(i.id));
       let response;
       if (hasId) {
@@ -216,13 +214,12 @@ export default function AppExperience() {
       const { data, error } = response;
 
       if (error) {
-        console.error('Supabase error details:', error);
+        console.error('Supabase error:', error);
         alert('Supabase Error: ' + (error.message || JSON.stringify(error)));
         throw error;
       }
 
       if (data) {
-        // Re-fetch all listings to keep admin & customer in sync
         if (typeof fetchListings === 'function') {
           fetchListings();
         } else {
@@ -235,11 +232,16 @@ export default function AppExperience() {
       return false;
     }
   }
+
+  function logout() {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    setAuthenticated(false);
   }
-  
-  function logout() { sessionStorage.removeItem(ADMIN_SESSION_KEY); setAuthenticated(false) }
+
   if (isAdminPath) {
-    if (!authenticated) return <AdminLogin onLogin={() => setAuthenticated(true)} />
-    return <AdminDashboard listings={listings} saveListings={saveListings} onLogout={logout} />
+    if (!authenticated) return <AdminLogin onLogin={() => setAuthenticated(true)} />;
+    return <AdminDashboard listings={listings} saveListings={saveListings} onLogout={logout} />;
   }
-  return <CustomerHome listings={listings} />
+
+  return <CustomerHome listings={listings} />;
+}
