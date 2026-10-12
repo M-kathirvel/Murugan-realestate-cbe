@@ -191,35 +191,50 @@ export default function AppExperience() {
     fetchListings()
   }, [])
 
-  async function saveListings(updated) {
+ async function saveListings(updated) {
     try {
-      // Ensure we have a clean array of property objects
       const items = Array.isArray(updated) ? updated : [updated];
 
       const cleanItems = items.map((item) => {
         const copy = { ...item };
-        // Remove client-only temporary IDs before inserting to let Supabase generate auto-increment ID
-        if (typeof copy.id === 'string' && (copy.id.startsWith('temp_') || copy.id.startsWith('prop_'))) {
+        // Delete client-side temp ids so Supabase auto-generates them
+        if (!copy.id || (typeof copy.id === 'string' && copy.id.startsWith('temp_'))) {
           delete copy.id;
         }
         return copy;
       });
 
-      const { data, error } = await supabase
-        .from('listings')
-        .upsert(cleanItems)
-        .select();
+      // Upsert-க்கு பதிலாக insert அல்லது id இருந்தால் மட்டும் upsert
+      const hasId = cleanItems.some(i => Boolean(i.id));
+      let response;
+      if (hasId) {
+        response = await supabase.from('listings').upsert(cleanItems).select();
+      } else {
+        response = await supabase.from('listings').insert(cleanItems).select();
+      }
 
-      if (error) throw error;
+      const { data, error } = response;
+
+      if (error) {
+        console.error('Supabase error details:', error);
+        alert('Supabase Error: ' + (error.message || JSON.stringify(error)));
+        throw error;
+      }
 
       if (data) {
-        setListings(data);
+        // Re-fetch all listings to keep admin & customer in sync
+        if (typeof fetchListings === 'function') {
+          fetchListings();
+        } else {
+          setListings((prev) => [...prev, ...data]);
+        }
         return true;
       }
     } catch (err) {
       console.error('Error saving listing:', err.message || err);
       return false;
     }
+  }
   }
   
   function logout() { sessionStorage.removeItem(ADMIN_SESSION_KEY); setAuthenticated(false) }
@@ -228,4 +243,3 @@ export default function AppExperience() {
     return <AdminDashboard listings={listings} saveListings={saveListings} onLogout={logout} />
   }
   return <CustomerHome listings={listings} />
-}
