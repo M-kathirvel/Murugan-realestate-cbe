@@ -196,14 +196,41 @@ export default function AppExperience() {
       const items = Array.isArray(updated) ? updated : [updated];
 
       const cleanItems = items.map((item) => {
-        const copy = { ...item };
-        if (!copy.id || (typeof copy.id === 'string' && copy.id.startsWith('temp_'))) {
-          delete copy.id;
+        // Map frontend fields directly to table columns
+        const payload = {
+          title: item.title || '',
+          location: item.location || '',
+          area: item.area || '',
+          price: item.price || '',
+          pricelabel: item.pricelabel || item.priceLabel || '',
+          extent: item.extent || '',
+          type: item.type || '',
+          status: item.status || 'Available',
+          facing: item.facing || '',
+          road: item.road || '',
+          approval: item.approval || '',
+          description: item.description || '',
+          image: item.image || (Array.isArray(item.photos) ? item.photos[0] : '') || '',
+          photos: Array.isArray(item.photos) ? item.photos : [],
+          images: Array.isArray(item.images) ? item.images : (Array.isArray(item.photos) ? item.photos : []),
+          highlights: Array.isArray(item.highlights) ? item.highlights : [],
+          features: Array.isArray(item.features) ? item.features : [],
+          featured: Boolean(item.featured),
+          beds: item.beds ? String(item.beds) : '',
+          baths: item.baths ? String(item.baths) : '',
+          landmark: item.landmark || '',
+          contact: item.contact || ''
+        };
+
+        // Only attach valid numeric ID if updating an existing record
+        if (item.id && typeof item.id === 'number') {
+          payload.id = item.id;
         }
-        return copy;
+
+        return payload;
       });
 
-      const hasId = cleanItems.some(i => Boolean(i.id));
+      const hasId = cleanItems.some((i) => Boolean(i.id));
       let response;
       if (hasId) {
         response = await supabase.from('listings').upsert(cleanItems).select();
@@ -221,7 +248,7 @@ export default function AppExperience() {
 
       if (data) {
         if (typeof fetchListings === 'function') {
-          fetchListings();
+          await fetchListings();
         } else {
           setListings((prev) => [...prev, ...data]);
         }
@@ -232,16 +259,3 @@ export default function AppExperience() {
       return false;
     }
   }
-
-  function logout() {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    setAuthenticated(false);
-  }
-
-  if (isAdminPath) {
-    if (!authenticated) return <AdminLogin onLogin={() => setAuthenticated(true)} />;
-    return <AdminDashboard listings={listings} saveListings={saveListings} onLogout={logout} />;
-  }
-
-  return <CustomerHome listings={listings} />;
-}
