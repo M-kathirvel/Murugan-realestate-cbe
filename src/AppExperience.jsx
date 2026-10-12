@@ -142,7 +142,9 @@ function AdminDashboard({ listings, saveListings, onLogout }) {
   const visible = listings.filter((item) => filter === 'all' || item.status === filter)
   function flash(message) { setToast(message); window.setTimeout(() => setToast(''), 3000) }
   function save(property, reportError) {
-    const next = editing ? listings.map((item) => item.id === property.id ? property : item) : [property, ...listings]
+const next = editing
+  ? listings.map((item) => item.id === property.id ? property : item)
+  : [{ ...property, id: Number(property.id) || Date.now() }, ...listings]
     if (!saveListings(next)) { reportError('This listing could not be saved. Remove a photo or use a smaller image.'); return }
     setShowForm(false); setEditing(null); flash(editing ? 'Property details updated.' : 'Property published successfully.')
   }
