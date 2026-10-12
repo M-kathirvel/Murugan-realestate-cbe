@@ -193,21 +193,34 @@ export default function AppExperience() {
 
   async function saveListings(updated) {
     try {
+      // Ensure we have a clean array of property objects
+      const items = Array.isArray(updated) ? updated : [updated];
+
+      const cleanItems = items.map((item) => {
+        const copy = { ...item };
+        // Remove client-only temporary IDs before inserting to let Supabase generate auto-increment ID
+        if (typeof copy.id === 'string' && (copy.id.startsWith('temp_') || copy.id.startsWith('prop_'))) {
+          delete copy.id;
+        }
+        return copy;
+      });
+
       const { data, error } = await supabase
         .from('listings')
-        .insert([updated])
-        .select()
+        .upsert(cleanItems)
+        .select();
 
-      if (error) throw error
+      if (error) throw error;
 
       if (data) {
-        setListings((prev) => [data[0], ...prev])
-        return true
+        setListings(data);
+        return true;
       }
     } catch (err) {
-      console.error('Error saving listing:', err.message)
-      return false
+      console.error('Error saving listing:', err.message || err);
+      return false;
     }
+  }
   }
   function logout() { sessionStorage.removeItem(ADMIN_SESSION_KEY); setAuthenticated(false) }
   if (isAdminPath) {
@@ -215,4 +228,3 @@ export default function AppExperience() {
     return <AdminDashboard listings={listings} saveListings={saveListings} onLogout={logout} />
   }
   return <CustomerHome listings={listings} />
-}
