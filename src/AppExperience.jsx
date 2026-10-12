@@ -40,18 +40,75 @@ function ImageFallback() {
 function PropertyCard({ property, onEnquire }) {
   const [imageIndex, setImageIndex] = useState(0)
   const photos = property.photos || []
-  return <article className={`property-card${property.status === 'sold' ? ' property-card--sold' : ''}`}>
-    <div className="property-photo-wrap"><ImageFallback />{photos[imageIndex] && <img className="property-photo" src={photos[imageIndex]} alt={property.title} onError={(event) => { event.currentTarget.style.display = 'none' }} />}<span className={`status-badge ${property.status === 'sold' ? 'status-badge--sold' : ''}`}><span />{property.status === 'sold' ? 'Sold out' : 'Available'}</span>
-      {photos.length > 1 && <div className="photo-controls"><button type="button" aria-label="Previous photo" onClick={() => setImageIndex((imageIndex + photos.length - 1) % photos.length)}><ArrowLeft size={15} /></button><span>{imageIndex + 1} / {photos.length}</span><button type="button" aria-label="Next photo" onClick={() => setImageIndex((imageIndex + 1) % photos.length)}><ArrowRight size={15} /></button></div>}
-    </div>
-    {Array.isArray(property.highlights) && property.highlights.length > 0 && (
-              <div className="highlight-list">
-                {property.highlights.slice(0, 4).map((h, i) => (
-                  <span key={i} className="highlight-tag">{h}</span>
-                ))}
-              </div>
-            )}
-  </article>
+  return (
+    <article className={`property-card${property.status === 'sold' ? ' property-card--sold' : ''}`}>
+      <div className="property-photo-wrap">
+        <ImageFallback />
+        {photos[imageIndex] && (
+          <img className="property-photo" src={photos[imageIndex]} alt={property.title} />
+        )}
+        {photos.length > 1 && (
+          <div className="photo-controls">
+            <button
+              type="button"
+              aria-label="Previous photo"
+              onClick={() => setImageIndex((imageIndex - 1 + photos.length) % photos.length)}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              aria-label="Next photo"
+              onClick={() => setImageIndex((imageIndex + 1) % photos.length)}
+            >
+              ›
+            </button>
+          </div>
+        )}
+        <span className={`status-badge ${property.status === 'sold' ? 'sold' : 'available'}`}>
+          {property.status === 'sold' ? 'Sold out' : 'Available'}
+        </span>
+      </div>
+
+      {Array.isArray(property.highlights) && property.highlights.length > 0 && (
+        <div className="highlight-list">
+          {property.highlights.slice(0, 4).map((h, i) => (
+            <span key={i} className="highlight-tag">{h}</span>
+          ))}
+        </div>
+      )}
+
+      <div className="property-body" style={{ padding: '1.25rem', color: '#fff' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>{property.title}</h3>
+          <span style={{ fontSize: '1.15rem', fontWeight: 700, color: '#e2b357' }}>{property.price}</span>
+        </div>
+        <p style={{ margin: '0 0 0.75rem 0', opacity: 0.8, fontSize: '0.9rem' }}>
+          📍 {property.location} {property.size ? `• ${property.size}` : ''}
+        </p>
+        {property.description && (
+          <p style={{ margin: '0 0 1rem 0', opacity: 0.7, fontSize: '0.85rem', lineHeight: 1.4 }}>
+            {property.description}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => onEnquire && onEnquire(property)}
+          style={{
+            width: '100%',
+            padding: '0.6rem',
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: '#fff',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Enquire Now
+        </button>
+      </div>
+    </article>
+  )
 }
 
 function EnquiryModal({ property, onClose, onSent }) {
