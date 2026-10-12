@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 import { useEffect, useState } from 'react'
 import {
   ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Camera, Check, ChevronDown,
@@ -17,14 +18,7 @@ const INSTAGRAM = 'https://instagram.com/murugan_real.estate_cbe'
 const COPYRIGHT_YEAR = new Date().getFullYear()
 const CATEGORIES = ['Residential Plot', 'Commercial Land', 'Villa', 'Farm Land']
 
-function getSavedListings() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(LISTINGS_KEY) || '[]')
-    return Array.isArray(saved) ? saved : []
-  } catch {
-    return []
-  }
-}
+
 
 function displayPrice(value) {
   const price = String(value || '').trim()
@@ -179,15 +173,41 @@ function CustomerHome({ listings }) {
 export default function AppExperience() {
   const [isAdminPath] = useState(() => window.location.pathname.replace(/\/$/, '') === '/admin')
   const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true')
-  const [listings, setListings] = useState(getSavedListings)
-  useEffect(() => {
-    const sync = (event) => { if (event.key === LISTINGS_KEY) setListings(getSavedListings()) }
-    window.addEventListener('storage', sync)
-    return () => window.removeEventListener('storage', sync)
+ const [listings, setListings] = useState([])
+ useEffect(() => {
+    async function fetchListings() {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .order('id', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching listings:', error.message)
+      } else if (data) {
+        setListings(data)
+      }
+    }
+
+    fetchListings()
   }, [])
-  function saveListings(updated) {
-    try { localStorage.setItem(LISTINGS_KEY, JSON.stringify(updated)); setListings(updated); return true }
-    catch { return false }
+
+  async function saveListings(updated) {
+    try {
+      const { data, error } = await supabase
+        .from('listings')
+        .insert([updated])
+        .select()
+
+      if (error) throw error
+
+      if (data) {
+        setListings((prev) => [data[0], ...prev])
+        return true
+      }
+    } catch (err) {
+      console.error('Error saving listing:', err.message)
+      return false
+    }
   }
   function logout() { sessionStorage.removeItem(ADMIN_SESSION_KEY); setAuthenticated(false) }
   if (isAdminPath) {
