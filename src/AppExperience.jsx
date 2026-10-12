@@ -191,12 +191,11 @@ export default function AppExperience() {
     fetchListings()
   }, [])
 
- async function saveListings(updated) {
+async function saveListings(updated) {
     try {
       const items = Array.isArray(updated) ? updated : [updated];
 
       const cleanItems = items.map((item) => {
-        // Map frontend fields directly to table columns
         const payload = {
           title: item.title || '',
           location: item.location || '',
@@ -222,17 +221,17 @@ export default function AppExperience() {
           contact: item.contact || ''
         };
 
-        // Only attach valid numeric ID if updating an existing record
-        if (item.id && typeof item.id === 'number') {
-          payload.id = item.id;
+        // If id is a valid pure integer, attach it for updating; otherwise let Supabase auto-generate bigint ID
+        if (item.id && !isNaN(Number(item.id)) && !String(item.id).includes('-')) {
+          payload.id = Number(item.id);
         }
 
         return payload;
       });
 
-      const hasId = cleanItems.some((i) => Boolean(i.id));
+      const hasValidId = cleanItems.some((i) => Boolean(i.id));
       let response;
-      if (hasId) {
+      if (hasValidId) {
         response = await supabase.from('listings').upsert(cleanItems).select();
       } else {
         response = await supabase.from('listings').insert(cleanItems).select();
@@ -259,15 +258,4 @@ export default function AppExperience() {
       return false;
     }
   }
-  function logout() {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    setAuthenticated(false);
-  }
-
-  if (isAdminPath) {
-    if (!authenticated) return <AdminLogin onLogin={() => setAuthenticated(true)} />;
-    return <AdminDashboard listings={listings} saveListings={saveListings} onLogout={logout} />;
-  }
-
-  return <CustomerHome listings={listings} />;
 }
